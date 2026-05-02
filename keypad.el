@@ -414,7 +414,7 @@ Uses PREDICATES if non-nil, otherwise `keypad-pass-through-predicates'."
 (defun keypad--read-event-with-which-key (prompt modifier prefix)
   "Read an event with PROMPT, optionally showing which-key popup.
 When `keypad--which-key-read-event-fn' is set, delegates event
-reading to it for paging support (C-h n/p). MODIFIER and PREFIX are
+reading to it for paging support (C-h n/p).  MODIFIER and PREFIX are
 passed to the which-key show function."
   (when keypad--which-key-show-fn
     (funcall keypad--which-key-show-fn prefix modifier))

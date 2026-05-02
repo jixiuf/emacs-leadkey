@@ -1,7 +1,8 @@
 # -*- coding:utf-8 -*-
 
 EMACS ?= emacs
-ELC := keypad.elc
+ELC := keypad.elc keypad-which-key.elc
+ELS := keypad.el keypad-which-key.el
 
 .PHONY: all build test test-all lint byte-compile clean
 all: byte-compile lint test
@@ -13,7 +14,7 @@ byte-compile: $(ELC)
 		--eval "(package-initialize)" \
 		-f batch-byte-compile $<
 test:
-	emacs --batch -Q --eval "(package-initialize)" -L . -L test \
+	$(EMACS) --batch -Q --eval "(package-initialize)" -L . -L test \
 	  -l ert \
 	  -l test/keypad-test.el \
 	  -f keypad-test-run
@@ -25,27 +26,25 @@ package-lint:
 		--eval "(package-initialize)" \
 		--eval "(require 'package-lint)" \
 		-f package-lint-batch-and-exit \
-		keypad.el
+		keypad.el keypad-which-key.el
 
 checkdoc:
-	@$(EMACS) --batch -Q \
+	@for file in $(ELS); do \
+		echo "Checking $$file..."; \
+		$(EMACS) -Q --batch \
 		--eval "(require 'checkdoc)" \
-		--eval "(advice-add 'display-warning :around \
-		  (lambda (orig type msg &rest args) \
-		    (unless (string-match \"Keycode .* embedded in doc string\" \
-		                          (or msg \"\")) \
-		      (apply orig type msg args))))" \
-		--eval "(let ((sentence-end-double-space nil) \
-		              (checkdoc-proper-noun-list nil) \
-		              (checkdoc-verb-check-experimental-flag nil) \
-		              (ok t)) \
-		  (dolist (f '(\"keypad.el\")) \
-		    (ignore-errors (kill-buffer \"*Warnings*\")) \
-		    (let ((inhibit-message t)) \
-		      (checkdoc-file f)) \
-		    (when (get-buffer \"*Warnings*\") \
-		      (setq ok nil) \
-		      (with-current-buffer \"*Warnings*\" \
-		        (message \"%s\" (buffer-string))))) \
-		  (unless ok (kill-emacs 1)))"
+		--eval "(setq checkdoc-sentence-ends-double-space t \
+		            checkdoc-proper-noun-list nil \
+		            checkdoc-verb-check-experimental-flag nil)" \
+		--eval "(let ((ok t)) \
+		          (ignore-errors (kill-buffer \"*Warnings*\")) \
+		          (let ((inhibit-message t)) \
+		            (checkdoc-file \"$$file\")) \
+		          (when (get-buffer \"*Warnings*\") \
+		            (setq ok nil) \
+		            (with-current-buffer \"*Warnings*\" \
+		              (message \"%s\" (buffer-string)))) \
+		          (unless ok (kill-emacs 1)))" || exit 1; \
+	done
+
 

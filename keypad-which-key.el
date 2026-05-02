@@ -1,10 +1,10 @@
-;;; keypad-which-key.el --- which-key integration for leader -*- lexical-binding: t; -*-
+;;; keypad-which-key.el --- Which-key integration for keypad -*- lexical-binding: t; -*-
 
 ;; Author: jixiuf
 ;; Keywords: convenience
 ;; Version: 0.2.0
 ;; URL: https://github.com/jixiuf/emacs-keypad
-;; Package-Requires: ((emacs "30.1") (keypad "0.2.0") (which-key))
+;; Package-Requires: ((emacs "30.1"))
 
 ;; Copyright (C) 2026, jixiuf, all rights reserved.
 
@@ -50,15 +50,15 @@ Set to nil for unlimited."
   :type '(choice (const :tag "Unlimited" nil) integer)
   :group 'keypad)
 
-(defun keypad-wk--modifier-bindings (target)
-  "Call `keypad--collect-modifier-bindings' with display limit applied."
+(defun keypad-which-key--modifier-bindings (target)
+  "Call `keypad--collect-modifier-bindings' for TARGET with display limit applied."
   (let ((all (keypad--collect-modifier-bindings target)))
     (if (and keypad-which-key-modifier-max-bindings
              (> (length all) keypad-which-key-modifier-max-bindings))
         (cl-subseq all 0 keypad-which-key-modifier-max-bindings)
       all)))
 
-(defun keypad-wk--collect-prefix-bindings (keys modifier)
+(defun keypad-which-key--collect-prefix-bindings (keys modifier)
   "Collect bindings for prefix KEYS with MODIFIER bias in sorting.
 MODIFIER non-nil sorts modified keys first; nil sorts plain keys first."
   (let* ((map (key-binding (kbd keys)))
@@ -116,7 +116,7 @@ MODIFIER non-nil sorts modified keys first; nil sorts plain keys first."
                        (append sorted-plain sorted-mod))))
         sorted))))
 
-(defun keypad-wk--next-page (delta)
+(defun keypad-which-key--next-page (delta)
   "Advance which-key page by DELTA, re-render."
   (when (and which-key--pages-obj
              (> (which-key--pages-num-pages which-key--pages-obj) 1))
@@ -125,19 +125,19 @@ MODIFIER non-nil sorts modified keys first; nil sorts plain keys first."
     (let ((which-key--automatic-display t))
       (which-key--show-page))))
 
-(defun keypad-wk--show-popup (&optional force)
+(defun keypad-which-key--show-popup (&optional force)
   "Show which-key popup if not already visible.  FORCE forces refresh."
   (when (and which-key--pages-obj
              (or force (not (which-key--popup-showing-p))))
     (let ((which-key--automatic-display t))
       (which-key--show-page))))
 
-(defun keypad-wk--hide ()
+(defun keypad-which-key--hide ()
   "Hide our which-key popup."
   (ignore-errors (which-key--hide-popup))
   (setq which-key--pages-obj nil))
 
-(defun keypad-wk--page-hint ()
+(defun keypad-which-key--page-hint ()
   "Return echo-area paging hint string."
   (when which-key--pages-obj
     (let* ((n (which-key--pages-num-pages which-key--pages-obj))
@@ -146,36 +146,37 @@ MODIFIER non-nil sorts modified keys first; nil sorts plain keys first."
         (format "  page %d/%d  %s n/p"
                 page n (key-description (vector help-char)))))))
 
-(defun keypad-wk--read-event (prompt-fn)
-  "Read an event with paging support."
+(defun keypad-which-key--read-event (prompt-fn)
+  "Read an event with paging support.
+PROMPT-FN is a function of no arguments that returns the prompt string."
   (let ((paging-key (and which-key-paging-key (kbd which-key-paging-key)))
         char)
     (while (not char)
       (setq char (funcall keypad--event-reader
                           (concat (funcall prompt-fn)
-                                  (or (keypad-wk--page-hint) ""))))
+                                  (or (keypad-which-key--page-hint) ""))))
       (if (and which-key-use-C-h-commands
                (numberp char) (= char help-char)
                which-key--pages-obj
                (> (which-key--pages-num-pages which-key--pages-obj) 1))
-          (let ((ch (funcall keypad--event-reader (keypad-wk--page-hint))))
-            (cond ((eq ch ?n) (keypad-wk--next-page 1))
-                  ((eq ch ?p) (keypad-wk--next-page -1)))
+          (let ((ch (funcall keypad--event-reader (keypad-which-key--page-hint))))
+            (cond ((eq ch ?n) (keypad-which-key--next-page 1))
+                  ((eq ch ?p) (keypad-which-key--next-page -1)))
             (setq char nil))
         (when (and paging-key (equal (vector char) paging-key))
-          (keypad-wk--show-popup t)
-          (keypad-wk--next-page 1)
+          (keypad-which-key--show-popup t)
+          (keypad-which-key--next-page 1)
           (setq char nil))))
     char))
 
-(defun keypad--which-key-show (keys modifier)
+(defun keypad-which-key--show (keys modifier)
   "Show which-key popup for KEYS with MODIFIER bias.
 Installed as `keypad--which-key-show-fn'."
   (let* ((modifier-only (and (or (null keys) (string-empty-p keys))
                              modifier))
          (bindings (if modifier-only
-                       (keypad-wk--modifier-bindings modifier)
-                     (keypad-wk--collect-prefix-bindings keys modifier)))
+                       (keypad-which-key--modifier-bindings modifier)
+                     (keypad-which-key--collect-prefix-bindings keys modifier)))
          (pages (and bindings (which-key--format-and-replace bindings)))
          (prefix (if modifier-only modifier keys)))
     (message "%s" (keypad--prompt keys modifier))
@@ -183,15 +184,16 @@ Installed as `keypad--which-key-show-fn'."
       (setq which-key--pages-obj
             (which-key--create-pages pages nil prefix))
       (when (sit-for which-key-idle-delay)
-        (keypad-wk--show-popup t)))))
+        (keypad-which-key--show-popup t)))))
 
-(defun keypad--which-key-modifier-read (target prefix)
+(defun keypad-which-key--modifier-read (target prefix)
   "Read a key with modifier-prefix which-key for TARGET.
+PREFIX is the current accumulated prefix string.
 Installed as `keypad--which-key-modifier-read-fn'."
-  (keypad-wk--hide)
+  (keypad-which-key--hide)
   (let* ((continuation-p (and prefix (not (string-empty-p prefix))))
          (page-prefix (if continuation-p (concat prefix " " target) target))
-         (raw (keypad-wk--modifier-bindings target))
+         (raw (keypad-which-key--modifier-bindings target))
          (bindings
           (if (not continuation-p)
               raw
@@ -218,19 +220,20 @@ Installed as `keypad--which-key-modifier-read-fn'."
           (setq which-key--pages-obj
                 (which-key--create-pages pages nil page-prefix))
           (sit-for which-key-idle-delay)
-          (keypad-wk--show-popup t))))
+          (keypad-which-key--show-popup t))))
     (unwind-protect
-        (keypad-wk--read-event
+        (keypad-which-key--read-event
          (lambda ()
            (concat (if continuation-p (concat prefix " ") "")
                    target "-")))
-      (keypad-wk--hide))))
+      (keypad-which-key--hide))))
 
+;;;###autoload
 (defun keypad-which-key-setup ()
-  "Set up which-key integration hooks into leader."
-  (setq keypad--which-key-show-fn #'keypad--which-key-show)
-  (setq keypad--which-key-modifier-read-fn #'keypad--which-key-modifier-read)
-  (setq keypad--which-key-read-event-fn #'keypad-wk--read-event))
+  "Set up which-key integration hooks into keypad."
+  (setq keypad--which-key-show-fn #'keypad-which-key--show)
+  (setq keypad--which-key-modifier-read-fn #'keypad-which-key--modifier-read)
+  (setq keypad--which-key-read-event-fn #'keypad-which-key--read-event))
 
 (defun keypad-which-key-teardown ()
   "Remove which-key integration hooks."
@@ -238,8 +241,9 @@ Installed as `keypad--which-key-modifier-read-fn'."
         keypad--which-key-modifier-read-fn nil
         keypad--which-key-read-event-fn nil))
 
-(with-eval-after-load 'keypad
+(when (featurep 'keypad)
   (keypad-which-key-setup))
+(add-hook 'keypad-mode-hook #'keypad-which-key-setup)
 
 (provide 'keypad-which-key)
 
