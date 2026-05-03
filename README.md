@@ -47,6 +47,7 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 | `:fallback` | no | inferred | Fallback modifier. nil = plain only |
 | `:toggle` | no | inferred | Toggle target modifier (see toggle section) |
 | `:dispatch` | no | nil | Alist `(CHAR . PLIST)` or `(CHAR . :toggle)` |
+| `:self` | no | nil | t = leader key itself is first char of sequence (see god-mode section) |
 | `:pass-through-predicates` | no | nil | Per-key pass-through predicates; nil = use global |
 
 ### Default Inference
@@ -217,3 +218,47 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
 | `, SPC f` | `M-f` — toggle (M- → nil), plain `f` |
 | `. a` | `C-M-a` — `.` is leader with modifier=C-M- |
 | `.` in vc-dir | `.` — per-key pass-through to literal `.` in vc-dir buffers |
+
+## Experimental: god-mode Alternative
+
+> **Experimental** — the `:self` keyword is new and subject to change.
+
+By setting `:self t` on a-z leader keys, keypad can emulate
+[god-mode](https://github.com/emacsorphanage/god-mode) — no leader key,
+every letter is directly translated to its Ctrl equivalent.
+Toggle on/off via `keypad-mode`.
+
+```elisp
+(require 'keypad)
+
+(setq keypad-keys
+      ;; a-z (except x/c/h/g/G) :self t — key itself is first char
+      (cl-loop for c from ?a to ?z
+               unless (memq c '(?x ?c ?h ?g ?G))
+               collect `(:key ,(char-to-string c)
+                         :prefix nil :modifier "C-" :fallback nil
+                         :self t)))
+
+(nconc keypad-keys
+       `((:key "x" :prefix "C-x" :modifier "C-"   :fallback "C-")
+         (:key "c" :prefix "C-c" :modifier "C-"   :fallback "C-")
+         (:key "h" :prefix "C-h" :modifier nil    :fallback "C-")
+         (:key "g" :prefix nil   :modifier "M-"   :fallback nil)
+         (:key "G" :prefix nil   :modifier "C-M-" :fallback nil)))
+
+(global-set-key (kbd "C-z") #'keypad-mode)
+
+(keypad-mode 1)
+```
+
+| Keys | Result | Mechanism |
+|------|--------|-----------|
+| `x f` | `C-x C-f` | prefix leader |
+| `c f` | `C-c C-f` | prefix leader |
+| `h k` | `C-h k` | prefix leader, plain-first |
+| `a`–`z` (*except above*) | `C-<letter>` | `:self t`, key itself translated |
+| `g f` | `M-f` | modifier-prefix leader |
+| `G f` | `C-M-f` | modifier-prefix leader |
+
+Use `C-z` to toggle `keypad-mode` on/off.
+In `minibuffer` / `isearch-mode`, all keys pass through as normal text.

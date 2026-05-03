@@ -146,7 +146,8 @@ default-filling or conditional logic is needed."
   dispatch-alist                ; ((char . context) ...)  ; root-level
   local-dispatch-alist          ; ((char . context) ...) ; continuations only
   keypad-char                   ; integer: leader key event
-  pass-through-predicates)      ; nil=use global, list=per-key override
+  pass-through-predicates       ; nil=use global, list=per-key override
+  self)                         ; t: leader key itself is the first char
 
 
 ;;; Normalization
@@ -213,7 +214,8 @@ Otherwise, toggle MODIFIER on/off (non-nil → nil, nil → \"C-\")."
                        :dispatch-alist nil
                        :local-dispatch-alist local-dispatch
                        :pass-through-predicates
-                       (plist-get val :pass-through-predicates)))))
+                       (plist-get val :pass-through-predicates)
+                       :self (plist-get val :self)))))
         (t (error "Invalid dispatch value: %S" val)))))
    alist))
 
@@ -244,8 +246,9 @@ Otherwise, toggle MODIFIER on/off (non-nil → nil, nil → \"C-\")."
               :local-dispatch-alist nil
               :keypad-char (aref (kbd key-str) 0)
               :pass-through-predicates
-              (plist-get entry :pass-through-predicates))))
-         keypad-keys)))
+              (plist-get entry :pass-through-predicates)
+               :self (plist-get entry :self))))
+          keypad-keys)))
 
 
 ;;; Key building
@@ -266,9 +269,10 @@ Uses PREFIX, MODIFIER, and FALLBACK.  Resolution order:
 - modifier non-nil: try MODIFIER+CHAR, else plain CHAR.
 - modifier nil: try plain CHAR, else FALLBACK+CHAR."
   (let* ((desc (single-key-description char))
-         (plain-key (concat prefix " " desc))
-         (mod-key (when modifier (concat prefix " " modifier desc)))
-         (fb-key (when fallback (concat prefix " " fallback desc))))
+         (pref-str (if (keypad--empty-p prefix) "" (concat prefix " ")))
+         (plain-key (concat pref-str desc))
+         (mod-key (when modifier (concat pref-str modifier desc)))
+         (fb-key (when fallback (concat pref-str fallback desc))))
     (cond ((and modifier mod-key (keypad--lookup-key mod-key))
            (cons mod-key nil))
           (modifier (cons plain-key t))
@@ -595,13 +599,18 @@ Returns :done, :continue, or nil (toggle, re-read)."
                                         (keypad-context-modifier ctx)))
                      (continuation-p nil)
                      (state :read)
+                     (first-char-p (keypad-context-self ctx))
                      (which-key-this-command-keys-function
                       (lambda () (kbd (car prefix-keys)))))
+                (when first-char-p
+                  (setf (keypad-context-keypad-char ctx) nil))
                 (while (not (eq state :done))
-                  (let ((char (keypad--read-event-with-which-key
-                               (keypad--prompt (car prefix-keys)
-                                               (cdr prefix-keys))
-                               (cdr prefix-keys) (car prefix-keys))))
+                  (let ((char (if first-char-p
+                                  (progn (setq first-char-p nil) leader)
+                                (keypad--read-event-with-which-key
+                                 (keypad--prompt (car prefix-keys)
+                                                 (cdr prefix-keys))
+                                 (cdr prefix-keys) (car prefix-keys)))))
                     (setq state (keypad--process-char
                                  ctx char prefix-keys continuation-p))
                     (when (eq state :continue)

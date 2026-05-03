@@ -494,6 +494,55 @@
                   '(?m ?x))
                  "M-x")))
 
+
+;;; self mode
+
+(defun keypad-test--do-run-self (config bindings events key-str)
+  "Run handler with CONFIG, mock BINDINGS/EVENTS, KEY-STR as pressed key."
+  (setq keypad-keys config)
+  (keypad--normalize-config)
+  (let* ((keypad--key-lookup-fn (keypad-test--key-lookup bindings))
+         (keypad--event-reader (keypad-test--event-source events))
+         (ctx (car keypad--normalized-config)))
+    (let ((result (keypad--run-handler (kbd key-str) ctx)))
+      (and result (key-description result)))))
+
+(ert-deftest keypad-tt-self--basic ()
+  ":self t: leader key itself translated via modifier (single char)."
+  (should (equal (keypad-test--do-run-self
+                  '((:key "a" :prefix nil :modifier "C-" :fallback nil :self t))
+                  '(("C-a" . ignore))
+                  '()
+                  "a")
+                 "C-a")))
+
+(ert-deftest keypad-tt-self--continuation ()
+  ":self t: key resolves to prefix, enters continuation, reads next key."
+  (should (equal (keypad-test--do-run-self
+                  '((:key "x" :prefix nil :modifier "C-" :fallback nil :self t))
+                  `(("C-x" . ,keypad-tt-cx-map) ("C-x C-f" . ignore))
+                  '(?f)
+                  "x")
+                 "C-x C-f")))
+
+(ert-deftest keypad-tt-self--no-binding ()
+  ":self t: modifier+char not bound, falls back to plain char."
+  (should (equal (keypad-test--do-run-self
+                  '((:key "a" :prefix nil :modifier "C-" :fallback nil :self t))
+                  '()
+                  '()
+                  "a")
+                 "a")))
+
+(ert-deftest keypad-tt-self--off-default ()
+  ":self nil: leader key acts as trigger, reads next key via modifier."
+  (should (equal (keypad-test--do-run-self
+                  '((:key "a" :prefix nil :modifier "C-" :fallback nil))
+                  '(("C-f" . ignore))
+                  '(?f)
+                  "a")
+                 "C-f")))
+
 (defun keypad-test-run ()
   "Run all leader tests."
   (ert-run-tests-batch-and-exit))
