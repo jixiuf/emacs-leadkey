@@ -7,6 +7,11 @@ ELS := keypad.el keypad-which-key.el
 .PHONY: all build test test-all lint byte-compile clean
 all: byte-compile lint test
 
+clean-elc:
+	rm -f *.elc
+
+clean: clean-elc
+
 byte-compile: $(ELC)
 
 %.elc: %.el

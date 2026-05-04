@@ -126,6 +126,10 @@ t        — bound command wins over toggle.
 Called as (PROMPT-FN) where PROMPT-FN returns the echo-area prompt.
 Should return the event character.")
 
+(defvar which-key-this-command-keys-function)
+(defvar which-key-inhibit)
+(defvar which-key--pages-obj)
+
 (defvar keypad--normalized-config nil
   "Cached normalized configuration.")
 
@@ -383,19 +387,19 @@ Iterates active keymaps directly and returns on first match."
   "Return non-nil if the leader key should pass through.
 Uses PREDICATES if non-nil, otherwise `keypad-pass-through-predicates'."
   (cl-some
-   (lambda (pred)
+   (lambda (keypad--pred)
      (cond
-       ((symbolp pred)
-        (cond ((eq major-mode pred) t)
-              ((and (string-suffix-p "-mode" (symbol-name pred))
-                    (bound-and-true-p pred)) t)
-              ((boundp pred) (symbol-value pred))
-              ((and (fboundp pred)
-                     (not (commandp pred))
-                     (not (string-suffix-p "-mode" (symbol-name pred))))
-               (funcall pred))
+       ((symbolp keypad--pred)
+        (cond ((eq major-mode keypad--pred) t)
+              ((and (string-suffix-p "-mode" (symbol-name keypad--pred))
+                    (bound-and-true-p keypad--pred)) t)
+              ((boundp keypad--pred) (symbol-value keypad--pred))
+              ((and (fboundp keypad--pred)
+                     (not (commandp keypad--pred))
+                     (not (string-suffix-p "-mode" (symbol-name keypad--pred))))
+               (funcall keypad--pred))
               (t nil)))
-      ((functionp pred) (funcall pred))
+      ((functionp keypad--pred) (funcall keypad--pred))
       (t nil)))
    (or predicates keypad-pass-through-predicates)))
 
@@ -435,14 +439,13 @@ passed to the which-key show function."
   "Read a second key after a TARGET modifier-prefix dispatch with PREFIX."
   ;; Temporarily override which-key's command-keys tracking during
   ;; modifier-prefix read so it doesn't show the old C-c bindings.
-  (with-no-warnings
-    (let ((which-key-this-command-keys-function (lambda () [])))
-      (if keypad--which-key-modifier-read-fn
-          (funcall keypad--which-key-modifier-read-fn target prefix)
-        (progn
-          (message "%s" (keypad--modifier-prefix-prompt target prefix))
-          (funcall keypad--event-reader
-                   (keypad--modifier-prefix-prompt target prefix)))))))
+  (let ((which-key-this-command-keys-function (lambda () [])))
+    (if keypad--which-key-modifier-read-fn
+        (funcall keypad--which-key-modifier-read-fn target prefix)
+      (progn
+        (message "%s" (keypad--modifier-prefix-prompt target prefix))
+        (funcall keypad--event-reader
+                 (keypad--modifier-prefix-prompt target prefix))))))
 
 
 ;;; Core handler
@@ -597,35 +600,34 @@ Returns :done, :continue, or nil (toggle, re-read)."
      ((keypad--pass-through-p (keypad-context-pass-through-predicates ctx))
       (vector leader))
      ((= len 1)
-      (with-no-warnings
-        (let ((which-key-inhibit t))
-          (condition-case nil
-              (let* ((prefix-keys (cons (keypad-context-prefix ctx)
-                                        (keypad-context-modifier ctx)))
-                     (continuation-p nil)
-                     (state :read)
-                     (first-char-p (keypad-context-self ctx))
-                     (which-key-this-command-keys-function
-                      (lambda () (kbd (car prefix-keys)))))
-                (when first-char-p
-                  (setf (keypad-context-keypad-char ctx) nil))
-                (while (not (eq state :done))
-                  (let ((char (if first-char-p
-                                  (progn (setq first-char-p nil) leader)
-                                (keypad--read-event-with-which-key
-                                 (keypad--prompt (car prefix-keys)
-                                                 (cdr prefix-keys))
-                                 (cdr prefix-keys) (car prefix-keys)))))
-                    (setq state (keypad--process-char
-                                 ctx char prefix-keys continuation-p))
-                    (when (eq state :continue)
-                      (setq continuation-p t state :read))))
-                (kbd (car prefix-keys)))
-            (quit
-             (when (fboundp 'which-key--hide-popup)
-               (ignore-errors (which-key--hide-popup)))
-             (setq which-key--pages-obj nil)
-             nil)))))
+      (let ((which-key-inhibit t))
+        (condition-case nil
+            (let* ((prefix-keys (cons (keypad-context-prefix ctx)
+                                      (keypad-context-modifier ctx)))
+                   (continuation-p nil)
+                   (state :read)
+                   (first-char-p (keypad-context-self ctx))
+                   (which-key-this-command-keys-function
+                    (lambda () (kbd (car prefix-keys)))))
+              (when first-char-p
+                (setf (keypad-context-keypad-char ctx) nil))
+              (while (not (eq state :done))
+                (let ((char (if first-char-p
+                                (progn (setq first-char-p nil) leader)
+                              (keypad--read-event-with-which-key
+                               (keypad--prompt (car prefix-keys)
+                                               (cdr prefix-keys))
+                               (cdr prefix-keys) (car prefix-keys)))))
+                  (setq state (keypad--process-char
+                               ctx char prefix-keys continuation-p))
+                  (when (eq state :continue)
+                    (setq continuation-p t state :read))))
+              (kbd (car prefix-keys)))
+          (quit
+           (when (fboundp 'which-key--hide-popup)
+             (ignore-errors (which-key--hide-popup)))
+           (setq which-key--pages-obj nil)
+           nil))))
      (t (vector leader)))))
 
 (defun keypad--make-handler (ctx)
