@@ -30,6 +30,7 @@ package-lint:
 	$(EMACS) --batch -Q \
 		--eval "(package-initialize)" \
 		--eval "(require 'package-lint)" \
+		--eval "(setq package-lint-main-file \"leadkey.el\")" \
 		-f package-lint-batch-and-exit \
 		leadkey.el leadkey-which-key.el
 
