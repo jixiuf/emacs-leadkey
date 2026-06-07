@@ -80,7 +80,11 @@
   "Leader key configuration."
   :group 'convenience)
 
-(defcustom leadkey-keys nil
+(defcustom leadkey-keys
+  '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
+          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
+                     (?h . (:prefix "<f1>" :modifier nil  :fallback "C-"))
+                     (?s . (:prefix "M-s" :modifier nil  :fallback "M-")))))
   "List of leader key configurations.
 Each element is a plist — see file commentary for keys."
   :type '(repeat sexp)
