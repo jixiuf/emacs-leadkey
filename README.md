@@ -12,6 +12,10 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 ```elisp
 (require 'leadkey)
 (require 'leadkey-which-key)  ; optional which-key integration
+
+;; leadkey is not enabled for your insert state
+(add-to-list 'leadkey-pass-through-predicates #'helixel-insert-state-p)
+
 (leadkey-mode 1)
 ```
 
@@ -163,8 +167,7 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
 (require 'leadkey)
 (require 'leadkey-which-key)
 
-(add-to-list 'leadkey-pass-through-predicates
-             (lambda () (eq helixel--current-state 'insert)))
+(add-to-list 'leadkey-pass-through-predicates #'helixel-insert-state-p)
 
 (setq leadkey-keys
   '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
