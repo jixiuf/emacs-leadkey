@@ -54,3 +54,5 @@ checkdoc:
 	done
 
 
+run:
+	emacs -Q -L . -l leadkey.el -l leadkey-which-key.el --eval '(leadkey-mode 1)'
