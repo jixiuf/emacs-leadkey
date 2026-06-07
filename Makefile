@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 
 EMACS ?= emacs
-ELC := keypad.elc keypad-which-key.elc
-ELS := keypad.el keypad-which-key.el
+ELC := leadkey.elc leadkey-which-key.elc
+ELS := leadkey.el leadkey-which-key.el
 
 .PHONY: all build test test-all lint byte-compile clean
 all: byte-compile lint test
@@ -21,8 +21,8 @@ byte-compile: $(ELC)
 test:
 	$(EMACS) --batch -Q --eval "(package-initialize)" -L . -L test \
 	  -l ert \
-	  -l test/keypad-test.el \
-	  -f keypad-test-run
+	  -l test/leadkey-test.el \
+	  -f leadkey-test-run
 
 
 lint: byte-compile package-lint checkdoc
@@ -31,7 +31,7 @@ package-lint:
 		--eval "(package-initialize)" \
 		--eval "(require 'package-lint)" \
 		-f package-lint-batch-and-exit \
-		keypad.el keypad-which-key.el
+		leadkey.el leadkey-which-key.el
 
 checkdoc:
 	@for file in $(ELS); do \

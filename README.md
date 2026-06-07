@@ -1,23 +1,23 @@
-# keypad.el
+# leadkey.el
 
 A modal leader-key package for Emacs.  It intercepts one or more "leader keys"
 via `key-translation-map` and translates subsequent keystrokes into standard
 Emacs key sequences, so you can type `SPC f` instead of `C-c C-f`.
 
 Unlike most leader-key packages that bind commands under custom keymaps,
-keypad translates keystrokes *before* they reach any keymap.  This means all
+leadkey translates keystrokes *before* they reach any keymap.  This means all
 your existing Emacs bindings work automatically — no manual rebinding needed.
 ## Quick Start
 
 ```elisp
-(require 'keypad)
-(require 'keypad-which-key)  ; optional which-key integration
-(keypad-mode 1)
+(require 'leadkey)
+(require 'leadkey-which-key)  ; optional which-key integration
+(leadkey-mode 1)
 ```
 
 ## Configuration
 
-`keypad-keys` is a list of plists.  Each entry describes one leader key:
+`leadkey-keys` is a list of plists.  Each entry describes one leader key:
 
 | Keyword | Required | Default | Description |
 |---------|----------|---------|-------------|
@@ -37,7 +37,7 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 
 ### Per-Key Pass-Through
 
-Each leader key can override the global `keypad-pass-through-predicates`:
+Each leader key can override the global `leadkey-pass-through-predicates`:
 
 ```elisp
 ;; , passes through in vc-dir-mode, otherwise acts as C-M- leader
@@ -100,8 +100,8 @@ In continuation:
 
 | Variable | Default | Controls |
 |----------|---------|----------|
-| `keypad-dispatch-priority` | nil | Dispatch vs. bound-command |
-| `keypad-toggle-priority` | nil | Toggle vs. bound-command |
+| `leadkey-dispatch-priority` | nil | Dispatch vs. bound-command |
+| `leadkey-toggle-priority` | nil | Toggle vs. bound-command |
 
 Values for both:
 
@@ -112,15 +112,15 @@ Values for both:
 | `:primary` | Primary command wins; fallback loses to feature |
 
 ```elisp
-(setq keypad-dispatch-priority nil)  ; dispatch always wins
-(setq keypad-toggle-priority t)      ; toggle checks bound commands
+(setq leadkey-dispatch-priority nil)  ; dispatch always wins
+(setq leadkey-toggle-priority t)      ; toggle checks bound commands
 ;; → SPC x → dispatch to C-x (dispatch wins)
 ;; → SPC SPC → C-c C-SPC if bound, else toggle
 ```
 
 ## Pass-Through Predicates
 
-`keypad-pass-through-predicates` controls when leader keys act as literal
+`leadkey-pass-through-predicates` controls when leader keys act as literal
 characters.  Each element is:
 
 - A **function**: called with no args, pass-through if non-nil
@@ -128,13 +128,13 @@ characters.  Each element is:
   → non-command function.  Mode symbols work even if their variable is void.
 
 ```elisp
-(setq keypad-pass-through-predicates '(minibufferp isearch-mode))
+(setq leadkey-pass-through-predicates '(minibufferp isearch-mode))
 ```
 
 ## Which-Key Integration
 
 ```elisp
-(require 'keypad-which-key)
+(require 'leadkey-which-key)
 ```
 
 Automatically enables which-key popup during leader sequences, including
@@ -142,31 +142,31 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
 
 | Custom variable | Default | Description |
 |-----------------|---------|-------------|
-| `keypad-which-key-modifier-max-bindings` | 150 | Max bindings in modifier-prefix popup (nil = unlimited) |
+| `leadkey-which-key-modifier-max-bindings` | 150 | Max bindings in modifier-prefix popup (nil = unlimited) |
 
 ## Commands / Variables
 
 | Command | Description |
 |---------|-------------|
-| `keypad-mode` | Global minor mode |
+| `leadkey-mode` | Global minor mode |
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `keypad-keys` | nil | Leader key configurations |
-| `keypad-pass-through-predicates` | `(minibufferp isearch-mode)` | Global pass-through predicates |
-| `keypad-dispatch-priority` | nil | Dispatch vs. command priority |
-| `keypad-toggle-priority` | nil | Toggle vs. command priority |
+| `leadkey-keys` | nil | Leader key configurations |
+| `leadkey-pass-through-predicates` | `(minibufferp isearch-mode)` | Global pass-through predicates |
+| `leadkey-dispatch-priority` | nil | Dispatch vs. command priority |
+| `leadkey-toggle-priority` | nil | Toggle vs. command priority |
 
 ## Full Configuration Demo
 
 ```elisp
-(require 'keypad)
-(require 'keypad-which-key)
+(require 'leadkey)
+(require 'leadkey-which-key)
 
-(add-to-list 'keypad-pass-through-predicates
+(add-to-list 'leadkey-pass-through-predicates
              (lambda () (eq helixel--current-state 'insert)))
 
-(setq keypad-keys
+(setq leadkey-keys
   '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
      :dispatch
      ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
@@ -178,7 +178,7 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
     (:key "." :prefix nil :modifier "C-M-" :fallback nil
      :pass-through-predicates (vc-dir-mode))))
 
-(keypad-mode 1)
+(leadkey-mode 1)
 ```
 
 **Explanations:**
@@ -202,15 +202,15 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
 
 > **Experimental** — the `:self` keyword is new and subject to change.
 
-By setting `:self t` on a-z leader keys, keypad can emulate
+By setting `:self t` on a-z leader keys, leadkey can emulate
 [god-mode](https://github.com/emacsorphanage/god-mode) — no leader key,
 every letter is directly translated to its Ctrl equivalent.
-Toggle on/off via `keypad-mode`.
+Toggle on/off via `leadkey-mode`.
 
 ```elisp
-(require 'keypad)
+(require 'leadkey)
 
-(setq keypad-keys
+(setq leadkey-keys
       ;; a-z (except x/c/h/g/G) :self t — key itself is first char
       (cl-loop for c from ?a to ?z
                unless (memq c '(?x ?c ?h ?g ?G))
@@ -218,16 +218,16 @@ Toggle on/off via `keypad-mode`.
                          :prefix nil :modifier "C-" :fallback nil
                          :self t)))
 
-(nconc keypad-keys
+(nconc leadkey-keys
        `((:key "x" :prefix "C-x" :modifier "C-"   :fallback "C-")
          (:key "c" :prefix "C-c" :modifier nil    :fallback "C-")
          (:key "h" :prefix "C-h" :modifier nil    :fallback "C-")
          (:key "g" :prefix nil   :modifier "M-"   :fallback nil)
          (:key "G" :prefix nil   :modifier "C-M-" :fallback nil)))
 
-(global-set-key (kbd "C-z") #'keypad-mode)
+(global-set-key (kbd "C-z") #'leadkey-mode)
 
-(keypad-mode 1)
+(leadkey-mode 1)
 ```
 
 | Keys | Result | Mechanism |
@@ -239,11 +239,11 @@ Toggle on/off via `keypad-mode`.
 | `g f` | `M-f` | modifier-prefix leader |
 | `G f` | `C-M-f` | modifier-prefix leader |
 
-Use `C-z` to toggle `keypad-mode` on/off.
+Use `C-z` to toggle `leadkey-mode` on/off.
 
 ## Comparison with similar packages
 
-| | **keypad** | **evil-keypad** | **god-mode** |
+| | **leadkey** | **evil-leadkey** | **god-mode** |
 |---|---|---|---|
 | **Mechanism** | `key-translation-map` translation | custom keymap + overlay parsing | minor-mode, overrides `self-insert` |
 | **Activation** | press leader key (SPC) | press trigger (SPC) in evil normal/visual/emacs states | ESC toggles, buffer-level switch |
@@ -253,9 +253,9 @@ Use `C-z` to toggle `keypad-mode` on/off.
 | **Continuation** | follow prefix keymap, keep reading keys | Ctrl-persistent concept | always Ctrl |
 | **Multi-leader** | yes — multiple leader keys, each with own prefix | single trigger | single global mode |
 | **Toggle** | press leader key itself to toggle modifier | none | ESC exits god-mode |
-| **Pass-through** | predicate-based per-key pass-through | exit keypad to restore | exit god-mode to restore |
+| **Pass-through** | predicate-based per-key pass-through | exit leadkey to restore | exit god-mode to restore |
 | **Dependencies** | none | evil (can be used standalone) | none |
-| **which-key** | optional module `keypad-which-key` | deep integration | not applicable |
+| **which-key** | optional module `leadkey-which-key` | deep integration | not applicable |
 | **Prefix args** | not supported | `u`→C-u, `-`→M--, digits | `u`→C-u, digits |
 | **Learning curve** | moderate (prefix/modifier/fallback/toggle) | low (fixed rules, intuitive) | low (all letters gain Ctrl) |
 | **Maturity** | 0.2.0 | 36 commits | 955 stars, established |
