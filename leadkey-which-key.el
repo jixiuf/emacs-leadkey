@@ -1,6 +1,7 @@
 ;;; leadkey-which-key.el --- Which-key integration for leadkey -*- lexical-binding: t; -*-
 
 ;; Author: jixiuf <https://github.com/jixiuf>
+;; Assisted-by: deepseek-v4-pro
 ;; Keywords: convenience
 ;; Version: 0.2.0
 ;; URL: https://github.com/jixiuf/emacs-leadkey
