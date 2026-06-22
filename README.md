@@ -1,4 +1,5 @@
 # leadkey.el
+[![MELPA](https://melpa.org/packages/leadkey-badge.svg)](https://melpa.org/#/leadkey)
 
 A modal leader-key package for Emacs.  It intercepts one or more "leader keys"
 via `key-translation-map` and translates subsequent keystrokes into standard
