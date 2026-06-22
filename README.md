@@ -17,6 +17,13 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 ;; leadkey is not enabled for your insert state
 (add-to-list 'leadkey-pass-through-predicates #'helixel-insert-state-p)
 
+;; this is the default value of leadkey-keys 
+(setq leadkey-keys
+  '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
+          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
+                     (?h . (:prefix "<f1>" :modifier nil  :fallback "C-"))
+                     (?s . (:prefix "M-s" :modifier nil  :fallback "M-"))))))
+
 (leadkey-mode 1)
 ```
 
