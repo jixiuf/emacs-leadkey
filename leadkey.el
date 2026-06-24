@@ -83,7 +83,9 @@
 
 (defcustom leadkey-keys
   '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
-          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
+          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"
+                                        ;SPC always toggle (ignore C-x C-SPC)
+                                    :dispatch ((?\s . :toggle))))
                      (?h . (:prefix "<f1>" :modifier nil  :fallback "C-"))
                      (?s . (:prefix "M-s" :modifier nil  :fallback "M-")))))
   "List of leader key configurations.

@@ -102,8 +102,9 @@ In continuation:
 ```elisp
 ;; Define M- and C- modifier-prefix dispatches for C-x continuation
 (?x . (:prefix "C-x" :modifier "C-" :fallback "C-"
-       :dispatch ((?m . (:prefix nil :modifier "M-" :fallback nil))
-                  (?c . (:prefix nil :modifier "C-" :fallback "C-")))))
+               :dispatch ((?\s . :toggle) ;SPC always toggle( ignore C-x C-SPC)
+                          (?m . (:prefix nil :modifier "M-" :fallback nil))
+                          (?c . (:prefix nil :modifier "C-" :fallback "C-")))))
 ;; SPC x m a → C-x M-a  (local M- dispatch)
 ;; SPC x c f → C-x C-f  (local C- dispatch)
 ```
