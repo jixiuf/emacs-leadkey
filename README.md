@@ -20,7 +20,9 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 ;; this is the default value of leadkey-keys 
 (setq leadkey-keys
   '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
-          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
+          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"
+                                        ;SPC always toggle (ignore C-x C-SPC)
+                                    :dispatch ((?\s . :toggle))))
                      (?h . (:prefix "<f1>" :modifier nil  :fallback "C-"))
                      (?s . (:prefix "M-s" :modifier nil  :fallback "M-"))))))
 
