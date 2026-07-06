@@ -20,11 +20,12 @@ your existing Emacs bindings work automatically — no manual rebinding needed.
 ;; this is the default value of leadkey-keys 
 (setq leadkey-keys
   '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
-          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"
+          :dispatch ((?x . (:prefix "C-x" :modifier "C-" :fallback nil
                                         ;SPC always toggle (ignore C-x C-SPC)
                                     :dispatch ((?\s . :toggle))))
                      (?h . (:prefix "<f1>" :modifier nil  :fallback "C-"))
-                     (?s . (:prefix "M-s" :modifier nil  :fallback "M-"))))))
+                     (?s . (:prefix "M-s" :modifier nil  :fallback "M-"))
+                     (?m . (:prefix nil  :modifier "M-" :fallback nil))))))
 
 (leadkey-mode 1)
 ```
@@ -103,7 +104,7 @@ In continuation:
 
 ```elisp
 ;; Define M- and C- modifier-prefix dispatches for C-x continuation
-(?x . (:prefix "C-x" :modifier "C-" :fallback "C-"
+(?x . (:prefix "C-x" :modifier "C-" :fallback nil
                :dispatch ((?\s . :toggle) ;SPC always toggle( ignore C-x C-SPC)
                           (?m . (:prefix nil :modifier "M-" :fallback nil))
                           (?c . (:prefix nil :modifier "C-" :fallback "C-")))))
@@ -181,9 +182,11 @@ modifier-prefix contexts.  Respects `which-key-idle-delay`, supports C-h n/p.
 (add-to-list 'leadkey-pass-through-predicates #'helixel-insert-state-p)
 
 (setq leadkey-keys
-  '((:key "<SPC>" :prefix "C-c" :modifier "" :fallback "C-"
-     :dispatch
-     ((?x . (:prefix "C-x" :modifier "C-" :fallback "C-"))
+  '((:key "<SPC>" :prefix "C-c" :modifier nil :fallback "C-"
+      :dispatch
+      ((?x . (:prefix "C-x" :modifier "C-" :fallback nil
+               ;SPC always toggle (ignore C-x C-SPC)
+               :dispatch ((?\s . :toggle))))
       (?h . (:prefix "C-h" :modifier nil  :fallback "C-"))
       (?s . (:prefix "M-s" :modifier nil  :fallback "M-"))
       (?g . (:prefix "M-g" :modifier nil  :fallback "M-"))
